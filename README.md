@@ -1,6 +1,6 @@
 # Atlas
 
-Atlas is a local-first image quiz app. Upload a diagram or photo, place landmarks on it, name each point to build an answer key, then test yourself by finding each named structure on the image.
+Atlas is a local-first quiz creation application. Upload a diagram or photo, place landmarks on it, name each point to build an answer key, then test yourself by finding each named structure on the image.
 
 ## Run the desktop app
 
