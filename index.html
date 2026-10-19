@@ -9,7 +9,7 @@
   </head>
   <body>
     <div class="app-shell">
-      <aside class="sidebar">
+      <aside class="sidebar" id="app-sidebar">
         <a class="brand" href="#" aria-label="Atlas home">
           <span class="brand-mark" aria-hidden="true">a.</span>
           <span>atlas<span class="brand-period">.</span></span>
@@ -31,6 +31,9 @@
 
       <main class="main-content">
         <header class="topbar">
+          <button class="sidebar-toggle" id="sidebar-toggle" type="button" aria-label="Hide sidebar" aria-expanded="true" aria-controls="app-sidebar">
+            <span aria-hidden="true">◂</span>
+          </button>
           <div class="breadcrumb"><span>Workspace</span><span class="breadcrumb-slash">/</span><strong id="breadcrumb-title">New quiz</strong></div>
           <div class="topbar-note"><span aria-hidden="true">✳</span> Your images never leave your device</div>
         </header>
@@ -89,6 +92,12 @@
               <section class="image-card">
                 <div class="image-toolbar">
                   <div class="canvas-label"><span class="canvas-live-dot"></span><span id="canvas-instruction">Click anywhere on the image to add a landmark</span></div>
+                  <div class="image-zoom-controls" role="group" aria-label="Image zoom controls">
+                    <button class="zoom-button" id="zoom-out-button" type="button" aria-label="Zoom out" title="Zoom out">−</button>
+                    <output class="zoom-level" id="zoom-level" aria-live="polite">100%</output>
+                    <button class="zoom-button" id="zoom-in-button" type="button" aria-label="Zoom in" title="Zoom in">+</button>
+                    <button class="zoom-fit-button" id="zoom-fit-button" type="button" title="Reset image zoom">Fit</button>
+                  </div>
                   <span class="landmark-counter" id="landmark-counter">0 landmarks</span>
                 </div>
                 <div class="image-frame" id="image-frame">

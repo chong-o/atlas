@@ -1,32 +1,24 @@
 const path = require("node:path");
 const fs = require("node:fs/promises");
 const { app, BrowserWindow, dialog } = require("electron");
+const { mergeDataDirectory } = require("./data-migration");
 
 let localServer;
 let mainWindow;
 
 async function createWindow() {
   app.setName("Atlas");
-  const appDataDirectory = path.join(app.getPath("appData"), "Atlas");
+  const appDataRoot = app.getPath("appData");
+  const appDataDirectory = path.join(appDataRoot, "Atlas");
   const dataDirectory = path.join(appDataDirectory, "data");
 
   try {
     await fs.mkdir(appDataDirectory, { recursive: true });
     app.setPath("userData", appDataDirectory);
     process.env.ATLAS_DATA_DIR = dataDirectory;
+    await mergeDataDirectory(path.join(appDataRoot, "atlas-image-quiz", "data"), dataDirectory);
     if (!app.isPackaged) {
-      try {
-        await fs.access(path.join(dataDirectory, "quizzes.json"));
-      } catch (error) {
-        if (error.code !== "ENOENT") throw error;
-        const existingDataDirectory = path.join(__dirname, "data");
-        try {
-          await fs.access(existingDataDirectory);
-          await fs.cp(existingDataDirectory, dataDirectory, { recursive: true, force: false });
-        } catch (copyError) {
-          if (copyError.code !== "ENOENT") throw copyError;
-        }
-      }
+      await mergeDataDirectory(path.join(__dirname, "data"), dataDirectory);
     }
     const { start } = require("./server");
     localServer = await start({ port: 0, log: false });

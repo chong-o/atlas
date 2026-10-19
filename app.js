@@ -2,10 +2,16 @@ const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml"]);
 
 const elements = {
+  appShell: document.querySelector(".app-shell"),
+  sidebarToggle: document.getElementById("sidebar-toggle"),
   newButton: document.getElementById("new-quiz-button"),
   firstUploadButton: document.getElementById("upload-first-button"),
   replaceButton: document.getElementById("replace-image-button"),
   imageInput: document.getElementById("image-input"),
+  zoomOutButton: document.getElementById("zoom-out-button"),
+  zoomInButton: document.getElementById("zoom-in-button"),
+  zoomFitButton: document.getElementById("zoom-fit-button"),
+  zoomLevel: document.getElementById("zoom-level"),
   emptyState: document.getElementById("empty-state"),
   editor: document.getElementById("editor"),
   notice: document.getElementById("notice"),
@@ -62,7 +68,9 @@ let quizFinished = false;
 let scoreSaving = false;
 let scoreSaveError = false;
 let replaceImageRequested = false;
+let imageZoom = 100;
 let focusedLandmarkId = null;
+let applyingImageZoom = false;
 let noticeTimeout;
 let saveQueue = Promise.resolve();
 
@@ -222,6 +230,7 @@ async function selectQuiz(id) {
   const quiz = quizzes.find(item => item.id === id);
   if (!quiz) return;
   activeQuiz = quiz;
+  setImageZoom(100);
   isQuizzing = false;
   clearQuizTimer();
   resetQuiz();
@@ -249,6 +258,53 @@ async function selectQuiz(id) {
       }, { once: true });
     }
   });
+  setImageZoom(100);
+}
+
+function setImageZoom(value, anchor = null) {
+  imageZoom = Math.min(300, Math.max(50, Math.round(value / 25) * 25));
+  elements.zoomLevel.value = `${imageZoom}%`;
+  elements.zoomLevel.textContent = `${imageZoom}%`;
+  elements.zoomOutButton.disabled = imageZoom <= 50;
+  elements.zoomInButton.disabled = imageZoom >= 300;
+  applyImageZoom(anchor);
+}
+
+function applyImageZoom(anchor = null) {
+  if (applyingImageZoom || !elements.image.naturalWidth) return;
+  applyingImageZoom = true;
+  const frame = elements.imageFrame;
+  const previousWidth = frame.scrollWidth;
+  const previousHeight = frame.scrollHeight;
+  const centerX = previousWidth > frame.clientWidth
+    ? (frame.scrollLeft + frame.clientWidth / 2) / previousWidth
+    : 0.5;
+  const centerY = previousHeight > frame.clientHeight
+    ? (frame.scrollTop + frame.clientHeight / 2) / previousHeight
+    : 0.5;
+
+  elements.image.style.width = "";
+  elements.image.style.maxWidth = "";
+  elements.image.style.maxHeight = "";
+  elements.imageStage.style.maxWidth = "";
+  const fitWidth = elements.image.getBoundingClientRect().width;
+  elements.imageStage.style.maxWidth = "none";
+  elements.image.style.maxWidth = "none";
+  elements.image.style.maxHeight = "none";
+  elements.image.style.width = `${fitWidth * imageZoom / 100}px`;
+
+  if (anchor) {
+    const imageRect = elements.image.getBoundingClientRect();
+    frame.scrollLeft = Math.max(0, frame.scrollLeft + imageRect.left +
+      anchor.xRatio * imageRect.width - anchor.x);
+    frame.scrollTop = Math.max(0, frame.scrollTop + imageRect.top +
+      anchor.yRatio * imageRect.height - anchor.y);
+  } else {
+    frame.scrollLeft = Math.max(0, centerX * frame.scrollWidth - frame.clientWidth / 2);
+    frame.scrollTop = Math.max(0, centerY * frame.scrollHeight - frame.clientHeight / 2);
+  }
+  frame.classList.toggle("image-zoomed", imageZoom > 100);
+  applyingImageZoom = false;
 }
 
 function renderEditor() {
@@ -346,13 +402,42 @@ function renderMarkers() {
     const isEditing = !isQuizzing && focusedLandmarkId === landmark.id;
     const marker = document.createElement("button");
     marker.type = "button";
-    marker.className = `landmark-marker${isTarget ? " quiz-target" : ""}${isIncorrect ? " quiz-incorrect" : ""}${isEditing ? " answer-key-target" : ""}`;
-    marker.style.setProperty("--x", `${landmark.x * 100}%`);
-    marker.style.setProperty("--y", `${landmark.y * 100}%`);
+    marker.className = `landmark-marker${isQuizzing ? "" : " draggable"}${isTarget ? " quiz-target" : ""}${isIncorrect ? " quiz-incorrect" : ""}${isEditing ? " answer-key-target" : ""}`;
+    positionMarker(marker, landmark);
     marker.textContent = String(index + 1);
     marker.title = isQuizzing ? `Landmark ${index + 1}` : (landmark.label || `Landmark ${index + 1}`);
     marker.setAttribute("aria-label", `Landmark ${index + 1}`);
     marker.disabled = isQuizzing && (hasAnswered || quizType === "free-response");
+    if (!isQuizzing) {
+      let pointerStart = null;
+      let dragged = false;
+      marker.addEventListener("pointerdown", event => {
+        if (event.button !== 0) return;
+        pointerStart = { x: event.clientX, y: event.clientY };
+        dragged = false;
+        marker.setPointerCapture(event.pointerId);
+        event.preventDefault();
+      });
+      marker.addEventListener("pointermove", event => {
+        if (!pointerStart || !marker.hasPointerCapture(event.pointerId)) return;
+        if (!dragged && Math.hypot(event.clientX - pointerStart.x, event.clientY - pointerStart.y) < 2) return;
+        dragged = true;
+        const rect = elements.image.getBoundingClientRect();
+        landmark.x = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+        landmark.y = Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height));
+        positionMarker(marker, landmark);
+      });
+      marker.addEventListener("pointerup", event => {
+        if (!pointerStart) return;
+        if (dragged) {
+          event.preventDefault();
+          event.stopPropagation();
+          queueSave();
+        }
+        pointerStart = null;
+      });
+      marker.addEventListener("pointercancel", () => { pointerStart = null; });
+    }
     marker.addEventListener("click", () => {
       if (isQuizzing && quizType === "point") answerPointQuestion(landmark.id);
     });
@@ -360,8 +445,13 @@ function renderMarkers() {
   }
 }
 
+function positionMarker(marker, landmark) {
+  marker.style.setProperty("--x", `${landmark.x * 100}%`);
+  marker.style.setProperty("--y", `${landmark.y * 100}%`);
+}
+
 function addLandmark(event) {
-  if (!activeQuiz || isQuizzing || event.target.closest(".landmark-marker")) return;
+  if (!activeQuiz || isQuizzing || event.button !== 0 || event.target.closest(".landmark-marker")) return;
   const rect = elements.image.getBoundingClientRect();
   const x = (event.clientX - rect.left) / rect.width;
   const y = (event.clientY - rect.top) / rect.height;
@@ -731,6 +821,59 @@ async function deleteQuiz(id) {
 }
 
 elements.newButton.addEventListener("click", openFilePicker);
+elements.zoomOutButton.addEventListener("click", () => setImageZoom(imageZoom - 25));
+elements.zoomInButton.addEventListener("click", () => setImageZoom(imageZoom + 25));
+elements.zoomFitButton.addEventListener("click", () => setImageZoom(100));
+const imageFrameObserver = new ResizeObserver(applyImageZoom);
+imageFrameObserver.observe(elements.imageFrame);
+elements.imageFrame.addEventListener("wheel", event => {
+  if (event.deltaY === 0) return;
+  event.preventDefault();
+  const imageRect = elements.image.getBoundingClientRect();
+  if (!imageRect.width || !imageRect.height) return;
+  const targetZoom = imageZoom + (event.deltaY < 0 ? 25 : -25);
+  setImageZoom(targetZoom, {
+    x: event.clientX,
+    y: event.clientY,
+    xRatio: Math.min(1, Math.max(0, (event.clientX - imageRect.left) / imageRect.width)),
+    yRatio: Math.min(1, Math.max(0, (event.clientY - imageRect.top) / imageRect.height))
+  });
+}, { passive: false });
+let panStart = null;
+elements.imageFrame.addEventListener("pointerdown", event => {
+  if (event.button !== 1) return;
+  event.preventDefault();
+  panStart = {
+    pointerId: event.pointerId,
+    x: event.clientX,
+    y: event.clientY,
+    scrollLeft: elements.imageFrame.scrollLeft,
+    scrollTop: elements.imageFrame.scrollTop
+  };
+  elements.imageFrame.classList.add("panning");
+  elements.imageFrame.setPointerCapture(event.pointerId);
+});
+elements.imageFrame.addEventListener("pointermove", event => {
+  if (!panStart || event.pointerId !== panStart.pointerId) return;
+  elements.imageFrame.scrollLeft = panStart.scrollLeft - (event.clientX - panStart.x);
+  elements.imageFrame.scrollTop = panStart.scrollTop - (event.clientY - panStart.y);
+});
+function finishImagePan(event) {
+  if (!panStart || (event && event.pointerId !== panStart.pointerId)) return;
+  if (elements.imageFrame.hasPointerCapture(panStart.pointerId)) {
+    elements.imageFrame.releasePointerCapture(panStart.pointerId);
+  }
+  panStart = null;
+  elements.imageFrame.classList.remove("panning");
+}
+elements.imageFrame.addEventListener("pointerup", finishImagePan);
+elements.imageFrame.addEventListener("pointercancel", finishImagePan);
+elements.sidebarToggle.addEventListener("click", () => {
+  const collapsed = elements.appShell.classList.toggle("sidebar-collapsed");
+  elements.sidebarToggle.setAttribute("aria-expanded", String(!collapsed));
+  elements.sidebarToggle.setAttribute("aria-label", collapsed ? "Show sidebar" : "Hide sidebar");
+  elements.sidebarToggle.querySelector("span").textContent = collapsed ? "▸" : "◂";
+});
 elements.firstUploadButton.addEventListener("click", openFilePicker);
 elements.replaceButton.addEventListener("click", () => {
   replaceImageRequested = true;

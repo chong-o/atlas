@@ -1,6 +1,6 @@
 {
   "name": "atlas-image-quiz",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "A local-first image landmark quiz app",
   "author": "Atlas",
   "private": true,
@@ -13,7 +13,8 @@
     "dist:mac": "electron-builder --mac dmg zip",
     "dist:mac:arm64": "electron-builder --mac dmg zip --arm64",
     "dist:mac:x64": "electron-builder --mac dmg zip --x64",
-    "check": "node --check main.js && node --check server.js && node --check app.js"
+    "check": "node --check main.js && node --check server.js && node --check app.js && node --check data-migration.js",
+    "test": "node --test"
   },
   "build": {
     "appId": "com.atlas.imagequiz",
@@ -21,6 +22,7 @@
     "asar": true,
     "files": [
       "main.js",
+      "data-migration.js",
       "server.js",
       "app.js",
       "index.html",

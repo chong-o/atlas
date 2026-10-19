@@ -34,7 +34,7 @@ The macOS builds are unsigned. For distribution beyond testing, sign and notariz
 ## Use it
 
 1. Choose **Upload an image** and select a JPG, PNG, GIF, WebP, or SVG file up to 20 MB.
-2. Click points on the image. Enter a name for each point in the answer key.
+2. Zoom the image from 50% to 300% with the mouse wheel or **+** and **−**, or choose **Fit** to reset it. Pan the zoomed image by dragging with the middle mouse button. Click points on the image, drag them with the left mouse button to adjust their position, and enter a name for each point in the answer key.
 3. Choose **Find on image** to see one name at a time and click its numbered point, or **Free response** to see a highlighted numbered point and type the matching name from your answer key. Free-response answers are case-insensitive.
 4. Each quiz runs through every named landmark once in random order. Finish the round to save your score, first-try accuracy, and elapsed time to the study set's scoreboard.
 5. Rename, replace, and delete study sets from the app. Each change is saved automatically.
@@ -44,7 +44,7 @@ Quizzes, scores, and uploaded images are stored locally in the app's user-data f
 - Windows: `%APPDATA%\Atlas\data\`
 - macOS: `~/Library/Application Support/Atlas/data/`
 
-The app does not send images to an online service. Back up this `data` folder to keep a separate copy of your study sets. When running the desktop app from source for the first time, Atlas copies an existing project `data` folder into its user-data folder if one is present.
+The app does not send images to an online service. Back up this `data` folder to keep a separate copy of your study sets. On first launch, Atlas merges existing study sets from the earlier `atlas-image-quiz` data folder and, when running from source, the project `data` folder. Existing study sets are preserved during this migration.
 
 ## Run the browser version
 
