@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f5f3ed">
+    <title>Atlas — Visual study, made yours</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="brand" href="#" aria-label="Atlas home">
+          <span class="brand-mark" aria-hidden="true">a.</span>
+          <span>atlas<span class="brand-period">.</span></span>
+        </a>
+        <p class="sidebar-caption">YOUR STUDY SPACE</p>
+        <button class="new-quiz-button" id="new-quiz-button" type="button">
+          <span aria-hidden="true">＋</span> New image quiz
+        </button>
+        <div class="library-heading">
+          <span>YOUR LIBRARY</span>
+          <span class="library-count" id="library-count">0</span>
+        </div>
+        <nav class="quiz-list" id="quiz-list" aria-label="Saved quizzes"></nav>
+        <div class="sidebar-footer">
+          <span class="local-indicator" aria-hidden="true"></span>
+          Saved on this device
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <div class="breadcrumb"><span>Workspace</span><span class="breadcrumb-slash">/</span><strong id="breadcrumb-title">New quiz</strong></div>
+          <div class="topbar-note"><span aria-hidden="true">✳</span> Your images never leave your device</div>
+        </header>
+
+        <section class="content-area">
+          <div class="welcome-bar">
+            <div>
+              <p class="eyebrow">LEARN WHAT YOU CAN SEE</p>
+              <h1 id="page-title">Make an image your study guide.</h1>
+              <p class="intro" id="page-intro">Upload a diagram, mark the important parts, then quiz yourself until they stick.</p>
+            </div>
+            <div class="step-trail" aria-label="Study process">
+              <span class="step active"><span>1</span> Add image</span>
+              <i></i>
+              <span class="step"><span>2</span> Mark it</span>
+              <i></i>
+              <span class="step"><span>3</span> Practice</span>
+            </div>
+          </div>
+
+          <div class="notice" id="notice" role="status" aria-live="polite" hidden></div>
+          <section class="empty-state" id="empty-state">
+            <div class="empty-illustration" aria-hidden="true">
+              <div class="paper paper-back"></div>
+              <div class="paper paper-front"><span class="sample-dot dot-one"></span><span class="sample-dot dot-two"></span><span class="sample-dot dot-three"></span><svg viewBox="0 0 140 120"><path d="M66 12c-13 5-9 21-4 31 3 7 1 15-2 22l-18 32c-5 9 1 17 10 12l15-10 13 7c8 4 15-3 10-11L75 66c-3-8-2-15 3-22 6-10 9-24-2-31-3-2-7-3-10-1Z"/></svg></div>
+              <span class="illustration-spark">✳</span>
+            </div>
+            <p class="eyebrow">START WITH WHAT YOU'RE STUDYING</p>
+            <h2>Your first quiz starts with an image.</h2>
+            <p>Bring in a class diagram, a photo, or any visual you want to remember.</p>
+            <button class="primary-button" id="upload-first-button" type="button"><span aria-hidden="true">＋</span> Upload an image</button>
+            <span class="file-note">JPG, PNG, GIF, WebP or SVG · up to 20 MB</span>
+          </section>
+
+          <section class="editor" id="editor" hidden>
+            <div class="editor-heading">
+              <div class="title-wrap">
+                <label class="visually-hidden" for="quiz-title">Quiz title</label>
+                <input id="quiz-title" class="title-input" type="text" maxlength="80" placeholder="Name this study set">
+                <span class="save-status" id="save-status"><span></span> Saved locally</span>
+              </div>
+              <div class="editor-actions">
+                <label class="quiz-type-picker" for="quiz-type-select">
+                  <span>QUIZ TYPE</span>
+                  <select id="quiz-type-select">
+                    <option value="point">Find on image</option>
+                    <option value="free-response" selected>Free response</option>
+                  </select>
+                </label>
+                <button class="secondary-button" id="replace-image-button" type="button">Replace image</button>
+                <button class="primary-button quiz-button" id="quiz-mode-button" type="button" disabled><span aria-hidden="true">▶</span> Start quiz</button>
+              </div>
+            </div>
+
+            <div class="study-layout">
+              <section class="image-card">
+                <div class="image-toolbar">
+                  <div class="canvas-label"><span class="canvas-live-dot"></span><span id="canvas-instruction">Click anywhere on the image to add a landmark</span></div>
+                  <span class="landmark-counter" id="landmark-counter">0 landmarks</span>
+                </div>
+                <div class="image-frame" id="image-frame">
+                  <div class="image-stage" id="image-stage">
+                    <img id="study-image" alt="Your uploaded study image">
+                    <div id="marker-layer" class="marker-layer"></div>
+                  </div>
+                </div>
+                <div class="image-card-footer"><span>TIP</span> Add a point, then give it a name in your answer key.</div>
+              </section>
+
+              <aside class="key-card">
+                <div class="key-heading">
+                  <div><p class="eyebrow">YOUR STUDY SET</p><h2 id="key-heading">Answer key</h2></div>
+                  <span class="key-icon" aria-hidden="true">⌖</span>
+                </div>
+                <p class="key-description" id="key-description">Click the image to place your first landmark.</p>
+                <div class="landmark-list" id="landmark-list"></div>
+                <div class="key-empty-hint" id="key-empty-hint"><span aria-hidden="true">↖</span> Your points and labels will appear here.</div>
+                <div class="quiz-panel" id="quiz-panel" hidden>
+                  <div class="quiz-progress"><span id="quiz-progress-label">QUESTION 1</span><span id="quiz-score">0 correct</span><span class="quiz-timer" id="quiz-timer">00:00</span></div>
+                  <p class="quiz-prompt" id="quiz-prompt">Click the landmark for</p>
+                  <h3 id="quiz-question"></h3>
+                  <form class="free-response-form" id="free-response-form" hidden>
+                    <label class="visually-hidden" for="free-response-input">Type the answer-key name for the highlighted landmark</label>
+                    <input id="free-response-input" type="text" maxlength="80" autocomplete="off" spellcheck="false" placeholder="Type the answer-key name">
+                    <button class="primary-button" type="submit">Check answer</button>
+                  </form>
+                  <div class="quiz-feedback" id="quiz-feedback" aria-live="polite"></div>
+                  <div class="quiz-completion" id="quiz-completion" hidden></div>
+                  <button class="secondary-button next-question" id="next-question-button" type="button" hidden>Next question <span aria-hidden="true">→</span></button>
+                </div>
+                <div class="key-footer" id="key-footer"><span aria-hidden="true">✳</span> Your answer key is private and saved on this device.</div>
+              </aside>
+            </div>
+
+            <section class="scoreboard-card" aria-labelledby="scoreboard-title">
+              <div class="scoreboard-heading">
+                <div>
+                  <p class="eyebrow">YOUR PROGRESS</p>
+                  <h2 id="scoreboard-title">Scoreboard</h2>
+                </div>
+                <span class="scoreboard-caption">Recent runs for this study set</span>
+              </div>
+              <div id="scoreboard-list" class="scoreboard-list"></div>
+            </section>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <input id="image-input" type="file" accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml" hidden>
+    <script src="app.js"></script>
+  </body>
+</html>
