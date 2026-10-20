@@ -1,6 +1,6 @@
-# Atlas
+# Right or Chong?
 
-Atlas is a local-first quiz creation application. Upload a diagram or photo, place landmarks on it, name each point to build an answer key, then test yourself by finding each named structure on the image.
+Right or Chong? is a local-first quiz creation application. Upload a diagram or photo, place landmarks on it, name each point to build an answer key, then test yourself by finding each named structure on the image.
 
 ## Run the desktop app
 
@@ -45,7 +45,7 @@ Quizzes, scores, and uploaded images are stored locally in the app's user-data f
 - Windows: `%APPDATA%\Atlas\data\`
 - macOS: `~/Library/Application Support/Atlas/data/`
 
-The app does not send images to an online service. Back up this `data` folder to keep a separate copy of your study sets. On first launch, Atlas merges existing study sets from the earlier `atlas-image-quiz` data folder and, when running from source, the project `data` folder. Existing study sets are preserved during this migration.
+The app does not send images to an online service. Back up this `data` folder to keep a separate copy of your study sets. On first launch, Right or Chong? preserves and merges existing study sets from previous app data folders and, when running from source, the project `data` folder.
 
 ## Run the browser version
 

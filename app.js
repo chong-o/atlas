@@ -840,7 +840,7 @@ async function exportQuiz() {
     }
     const bundle = await response.blob();
     const link = document.createElement("a");
-    const title = activeQuiz.title.trim().replace(/[<>:"/\\|?*\u0000-\u001f]/g, "-") || "atlas-quiz";
+    const title = activeQuiz.title.trim().replace(/[<>:"/\\|?*\u0000-\u001f]/g, "-") || "right-or-chong-quiz";
     link.href = URL.createObjectURL(bundle);
     link.download = `${title}.atlas`;
     link.click();
@@ -981,7 +981,7 @@ async function startApp() {
   try {
     await loadQuizzes();
   } catch (error) {
-    announce(`Could not connect to the local Atlas server: ${error.message} Start it with "node server.js" and reload this page.`, "error");
+    announce(`Could not connect to the local Right or Chong? server: ${error.message} Start it with "node server.js" and reload this page.`, "error");
     elements.newButton.disabled = true;
     elements.importButton.disabled = true;
     elements.firstUploadButton.disabled = true;

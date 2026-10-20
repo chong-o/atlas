@@ -15,10 +15,10 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run dist:win -- --publish never
+      - run: npm run dist:win -- --publish=never
       - uses: actions/upload-artifact@v4
         with:
-          name: atlas-windows
+          name: right-or-chong-windows
           path: dist/*.exe
 
   macos:
@@ -30,10 +30,10 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run dist:mac -- --publish never
+      - run: npm run dist:mac -- --publish=never
       - uses: actions/upload-artifact@v4
         with:
-          name: atlas-macos
+          name: right-or-chong-macos
           path: |
             dist/*.dmg
             dist/*.zip

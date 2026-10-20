@@ -7,7 +7,7 @@ let localServer;
 let mainWindow;
 
 async function createWindow() {
-  app.setName("Atlas");
+  app.setName("Right or Chong?");
   const appDataRoot = app.getPath("appData");
   const appDataDirectory = path.join(appDataRoot, "Atlas");
   const dataDirectory = path.join(appDataDirectory, "data");
@@ -23,7 +23,7 @@ async function createWindow() {
     const { start } = require("./server");
     localServer = await start({ port: 0, log: false });
   } catch (error) {
-    dialog.showErrorBox("Atlas could not start", `Atlas was unable to open its local data store.\n\n${error.message}`);
+    dialog.showErrorBox("Right or Chong? could not start", `Right or Chong? was unable to open its local data store.\n\n${error.message}`);
     app.quit();
     return;
   }
@@ -34,7 +34,7 @@ async function createWindow() {
     height: 960,
     minWidth: 760,
     minHeight: 600,
-    title: "Atlas",
+    title: "Right or Chong?",
     backgroundColor: "#f7f7f2",
     webPreferences: {
       contextIsolation: true,
@@ -53,7 +53,7 @@ async function createWindow() {
   try {
     await mainWindow.loadURL(`http://127.0.0.1:${address.port}/`);
   } catch (error) {
-    dialog.showErrorBox("Atlas could not open", `The Atlas window could not be loaded.\n\n${error.message}`);
+    dialog.showErrorBox("Right or Chong? could not open", `The Right or Chong? window could not be loaded.\n\n${error.message}`);
     app.quit();
   }
 }

@@ -29,6 +29,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid #a8c8b5; outline-
 .sidebar-collapsed .sidebar { visibility: hidden; padding-right: 0; padding-left: 0; border-right: 0; }
 .brand { display: flex; align-items: center; gap: 10px; margin: 0 0 43px 7px; color: var(--ink); font: 800 24px/1 Manrope, sans-serif; letter-spacing: -1.4px; text-decoration: none; }
 .brand-mark { width: 31px; height: 31px; display: grid; place-items: center; border-radius: 10px; color: white; background: var(--green); font-size: 20px; letter-spacing: -2px; }
+.brand > span:last-child { font-size: 17px; letter-spacing: -.8px; white-space: nowrap; }
 .brand-period { color: var(--orange); }
 .sidebar-caption, .library-heading, .eyebrow { margin: 0; color: #89918b; font-size: 10px; font-weight: 700; letter-spacing: 1.15px; }
 .sidebar-caption { padding: 0 9px 12px; }

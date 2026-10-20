@@ -232,7 +232,7 @@ async function handleApi(request, response, url) {
     };
     response.writeHead(200, {
       "Content-Type": "application/vnd.atlas.quiz+json; charset=utf-8",
-      "Content-Disposition": `attachment; filename="atlas-quiz-${quiz.id}.atlas"`,
+      "Content-Disposition": `attachment; filename="right-or-chong-quiz-${quiz.id}.atlas"`,
       "Cache-Control": "no-store",
       "X-Content-Type-Options": "nosniff"
     });
@@ -246,7 +246,7 @@ async function handleApi(request, response, url) {
         bundle.format !== "atlas-quiz" || bundle.version !== 1 ||
         !bundle.quiz || typeof bundle.quiz !== "object" || Array.isArray(bundle.quiz) ||
         !bundle.image || typeof bundle.image !== "object" || Array.isArray(bundle.image)) {
-      throw Object.assign(new Error("This is not a supported Atlas quiz bundle."), { statusCode: 400 });
+      throw Object.assign(new Error("This is not a supported Right or Chong? quiz bundle."), { statusCode: 400 });
     }
     const quizId = bundle.quiz.id;
     validateId(quizId);
@@ -544,7 +544,7 @@ async function start(options = {}) {
     server.listen(port, "127.0.0.1", resolve);
   });
   if (options.log !== false) {
-    console.log(`Atlas is ready at http://127.0.0.1:${server.address().port}`);
+    console.log(`Right or Chong? is ready at http://127.0.0.1:${server.address().port}`);
     console.log(`Images and quizzes are saved in ${path.relative(ROOT, DATA_DIR)}\\`);
   }
   return server;
@@ -552,7 +552,7 @@ async function start(options = {}) {
 
 if (require.main === module) {
   start().catch(error => {
-    console.error(`Atlas could not start: ${error.message}`);
+    console.error(`Right or Chong? could not start: ${error.message}`);
     process.exitCode = 1;
   });
 }

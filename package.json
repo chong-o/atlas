@@ -2,7 +2,7 @@
   "name": "atlas-image-quiz",
   "version": "1.0.3",
   "description": "A local-first image landmark quiz app",
-  "author": "Atlas",
+  "author": "Right or Chong?",
   "private": true,
   "main": "main.js",
   "scripts": {
@@ -18,7 +18,7 @@
   },
   "build": {
     "appId": "com.atlas.imagequiz",
-    "productName": "Atlas",
+    "productName": "Right or Chong?",
     "asar": true,
     "files": [
       "main.js",
@@ -50,7 +50,8 @@
           ]
         }
       ],
-      "identity": null
+      "identity": null,
+      "artifactName": "Right-or-Chong-${version}-${arch}.${ext}"
     },
     "win": {
       "target": [
@@ -60,7 +61,9 @@
             "x64"
           ]
         }
-      ]
+      ],
+      "executableName": "Right or Chong",
+      "artifactName": "Right-or-Chong-${version}-Setup.${ext}"
     },
     "nsis": {
       "oneClick": false,
