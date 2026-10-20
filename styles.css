@@ -35,6 +35,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid #a8c8b5; outline-
 .new-quiz-button { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 42px; border: 1px solid #d5e1d7; border-radius: 8px; color: var(--green-dark); background: #edf3ec; font-size: 13px; font-weight: 700; }
 .new-quiz-button:hover { background: #e4ede3; }
 .new-quiz-button span { font-size: 18px; font-weight: 400; }
+.sidebar-actions { display: grid; gap: 8px; }
+.import-quiz-button { width: 100%; }
 .library-heading { display: flex; justify-content: space-between; align-items: center; margin: 36px 8px 12px; }
 .library-count { min-width: 20px; padding: 3px 6px; border-radius: 12px; color: #758078; background: #efeee8; text-align: center; font-size: 10px; letter-spacing: 0; }
 .quiz-list { display: grid; gap: 4px; overflow-y: auto; }
@@ -98,7 +100,9 @@ h1 { margin-bottom: 8px; font-size: clamp(25px, 3vw, 35px); line-height: 1.2; le
 .secondary-button { border: 1px solid #e1e1d9; color: #59635d; background: #fffefa; }
 .secondary-button:hover:not(:disabled) { border-color: #cbd5cc; background: #f7f8f3; }
 .secondary-button:disabled { cursor: not-allowed; opacity: .55; }
-.notice { margin: -12px 0 20px; padding: 11px 14px; border: 1px solid #e5c8b9; border-radius: 7px; color: #814a35; background: #fbf0e9; font-size: 12px; }
+.notice { margin: -12px 0 20px; padding: 11px 14px; border: 1px solid #d9e1dd; border-radius: 7px; color: #48564d; background: #f3f5f2; font-size: 12px; }
+.notice.success { border-color: #d9e5d9; color: #315f3c; background: #eff7ef; }
+.notice.error { border-color: #e5c8b9; color: #814a35; background: #fbf0e9; }
 
 .editor-heading { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin: -3px 0 20px; }
 .title-wrap { min-width: 0; }
@@ -224,7 +228,8 @@ h1 { margin-bottom: 8px; font-size: clamp(25px, 3vw, 35px); line-height: 1.2; le
   .sidebar { height: auto; min-height: 0; position: static; display: grid; grid-template-columns: 1fr auto; gap: 0 15px; padding: 13px 18px; border-right: 0; border-bottom: 1px solid var(--line); }
   .brand { margin: 0; }
   .sidebar-caption, .library-heading, .quiz-list, .sidebar-footer { display: none; }
-  .new-quiz-button { width: auto; padding: 0 13px; }
+  .sidebar-actions { display: flex; }
+  .new-quiz-button, .import-quiz-button { width: auto; padding: 0 13px; }
   .topbar { height: 50px; padding: 0 20px; }
   .content-area { padding: 30px 20px 45px; }
   .study-layout { grid-template-columns: minmax(0, 1fr); }

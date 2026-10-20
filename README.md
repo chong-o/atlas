@@ -38,6 +38,7 @@ The macOS builds are unsigned. For distribution beyond testing, sign and notariz
 3. Choose **Find on image** to see one name at a time and click its numbered point, or **Free response** to see a highlighted numbered point and type the matching name from your answer key. Free-response answers are case-insensitive.
 4. Each quiz runs through every named landmark once in random order. Finish the round to save your score, first-try accuracy, and elapsed time to the study set's scoreboard.
 5. Rename, replace, and delete study sets from the app. Each change is saved automatically.
+6. Use **Export quiz** to save the selected study set as a `.atlas` file that includes its image and answer key. On another device, choose **Import quiz** and select that file. Imports are added to the library without replacing existing quizzes; a bundle with an ID already in the library is rejected. Quiz scores are not included in exports.
 
 Quizzes, scores, and uploaded images are stored locally in the app's user-data folder, not in the installed application:
 

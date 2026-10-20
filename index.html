@@ -15,9 +15,14 @@
           <span>atlas<span class="brand-period">.</span></span>
         </a>
         <p class="sidebar-caption">YOUR STUDY SPACE</p>
-        <button class="new-quiz-button" id="new-quiz-button" type="button">
-          <span aria-hidden="true">＋</span> New image quiz
-        </button>
+        <div class="sidebar-actions">
+          <button class="new-quiz-button" id="new-quiz-button" type="button">
+            <span aria-hidden="true">＋</span> New image quiz
+          </button>
+          <button class="secondary-button import-quiz-button" id="import-quiz-button" type="button">
+            Import quiz
+          </button>
+        </div>
         <div class="library-heading">
           <span>YOUR LIBRARY</span>
           <span class="library-count" id="library-count">0</span>
@@ -84,6 +89,7 @@
                   </select>
                 </label>
                 <button class="secondary-button" id="replace-image-button" type="button">Replace image</button>
+                <button class="secondary-button" id="export-quiz-button" type="button">Export quiz</button>
                 <button class="primary-button quiz-button" id="quiz-mode-button" type="button" disabled><span aria-hidden="true">▶</span> Start quiz</button>
               </div>
             </div>
@@ -150,6 +156,7 @@
     </div>
 
     <input id="image-input" type="file" accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml" hidden>
+    <input id="quiz-import-input" type="file" accept=".atlas,.json,application/vnd.atlas.quiz+json,application/json" hidden>
     <script src="app.js"></script>
   </body>
 </html>

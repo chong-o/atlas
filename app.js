@@ -1,13 +1,17 @@
 const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
+const MAX_BUNDLE_BYTES = 30 * 1024 * 1024;
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml"]);
 
 const elements = {
   appShell: document.querySelector(".app-shell"),
   sidebarToggle: document.getElementById("sidebar-toggle"),
   newButton: document.getElementById("new-quiz-button"),
+  importButton: document.getElementById("import-quiz-button"),
+  exportButton: document.getElementById("export-quiz-button"),
   firstUploadButton: document.getElementById("upload-first-button"),
   replaceButton: document.getElementById("replace-image-button"),
   imageInput: document.getElementById("image-input"),
+  quizImportInput: document.getElementById("quiz-import-input"),
   zoomOutButton: document.getElementById("zoom-out-button"),
   zoomInButton: document.getElementById("zoom-in-button"),
   zoomFitButton: document.getElementById("zoom-fit-button"),
@@ -106,10 +110,11 @@ function makeId() {
     : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-function announce(message, isError = false) {
+function announce(message, variant = "success") {
   clearTimeout(noticeTimeout);
   elements.notice.textContent = message;
-  elements.notice.classList.toggle("error", isError);
+  elements.notice.classList.remove("success", "error");
+  elements.notice.classList.add(variant);
   elements.notice.hidden = false;
   noticeTimeout = setTimeout(() => { elements.notice.hidden = true; }, 6000);
 }
@@ -171,7 +176,7 @@ function renderLibrary() {
       try {
         await deleteQuiz(quiz.id);
       } catch (error) {
-        announce(`Could not delete this quiz: ${error.message}`, true);
+        announce(`Could not delete this quiz: ${error.message}`, "error");
       }
     });
     row.append(button, remove);
@@ -247,13 +252,13 @@ async function selectQuiz(id) {
   renderScoreboard();
   await new Promise(resolve => {
     if (elements.image.complete) {
-      if (!elements.image.naturalWidth) announce("The saved image could not be loaded from the local data folder.", true);
+      if (!elements.image.naturalWidth) announce("The saved image could not be loaded from the local data folder.", "error");
       resolve();
     }
     else {
       elements.image.addEventListener("load", resolve, { once: true });
       elements.image.addEventListener("error", () => {
-        announce("The saved image could not be loaded from the local data folder.", true);
+        announce("The saved image could not be loaded from the local data folder.", "error");
         resolve();
       }, { once: true });
     }
@@ -484,11 +489,11 @@ function startQuiz() {
   quizType = elements.quizTypeSelect.value;
   questionOrder = activeQuiz.landmarks.filter(point => point.label.trim());
   if (questionOrder.length === 0) {
-    announce("Name every landmark in the answer key before starting a quiz.", true);
+    announce("Name every landmark in the answer key before starting a quiz.", "error");
     return;
   }
   if (questionOrder.length !== activeQuiz.landmarks.length) {
-    announce("Add a name to every landmark before starting so the round can cover them all.", true);
+    announce("Add a name to every landmark before starting so the round can cover them all.", "error");
     return;
   }
   for (let index = questionOrder.length - 1; index > 0; index -= 1) {
@@ -654,7 +659,7 @@ async function completeQuiz() {
     announce("Quiz complete! Your score, accuracy, and time are on the scoreboard.");
   } catch (error) {
     scoreSaveError = true;
-    announce(`Quiz complete, but the result could not be saved: ${error.message}`, true);
+    announce(`Quiz complete, but the result could not be saved: ${error.message}`, "error");
   } finally {
     scoreSaving = false;
     renderCompletion();
@@ -744,7 +749,7 @@ function queueSave() {
   }).catch(error => {
     saveStatus.classList.remove("saving");
     saveStatus.lastChild.textContent = " Save failed";
-    announce(`Could not save this quiz: ${error.message}`, true);
+    announce(`Could not save this quiz: ${error.message}`, "error");
   });
 }
 
@@ -756,11 +761,11 @@ function openFilePicker() {
 async function importImage(file, replaceExisting = false) {
   if (!file) return;
   if (!ALLOWED_TYPES.has(file.type)) {
-    announce("Choose a JPG, PNG, GIF, WebP, or SVG image.", true);
+    announce("Choose a JPG, PNG, GIF, WebP, or SVG image.", "error");
     return;
   }
   if (file.size > MAX_IMAGE_BYTES) {
-    announce("This image is larger than 20 MB. Choose a smaller image.", true);
+    announce("This image is larger than 20 MB. Choose a smaller image.", "error");
     return;
   }
   try {
@@ -788,7 +793,7 @@ async function importImage(file, replaceExisting = false) {
     await selectQuiz(quiz.id);
     announce("Image added. Click it to place your first landmark.");
   } catch (error) {
-    announce(`Could not add this image: ${error.message}`, true);
+    announce(`Could not add this image: ${error.message}`, "error");
   }
 }
 
@@ -820,7 +825,63 @@ async function deleteQuiz(id) {
   }
 }
 
+async function exportQuiz() {
+  if (!activeQuiz) return;
+  try {
+    await saveQueue;
+    await persistQuiz(activeQuiz);
+    const response = await fetch(`/api/quizzes/${encodeURIComponent(activeQuiz.id)}/export`);
+    if (!response.ok) {
+      let message = `The local server returned ${response.status}.`;
+      try {
+        message = (await response.json()).error || message;
+      } catch {}
+      throw new Error(message);
+    }
+    const bundle = await response.blob();
+    const link = document.createElement("a");
+    const title = activeQuiz.title.trim().replace(/[<>:"/\\|?*\u0000-\u001f]/g, "-") || "atlas-quiz";
+    link.href = URL.createObjectURL(bundle);
+    link.download = `${title}.atlas`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(link.href), 0);
+    announce(`Exported "${activeQuiz.title}" with its image.`);
+  } catch (error) {
+    announce(`Could not export this quiz: ${error.message}`, "error");
+  }
+}
+
+async function importQuiz(file) {
+  if (!file) return;
+  if (file.size > MAX_BUNDLE_BYTES) {
+    announce("This quiz bundle is larger than 30 MB.", "error");
+    return;
+  }
+  try {
+    const bundle = JSON.parse(await file.text());
+    const imported = await apiRequest("/api/quizzes/import", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(bundle)
+    });
+    quizzes.push(imported);
+    quizzes.sort((a, b) => b.updatedAt - a.updatedAt);
+    await selectQuiz(imported.id);
+    announce(`Imported "${imported.title}" with its image.`);
+  } catch (error) {
+    announce(`Could not import this quiz: ${error.message}`, "error");
+  } finally {
+    elements.quizImportInput.value = "";
+  }
+}
+
 elements.newButton.addEventListener("click", openFilePicker);
+elements.importButton.addEventListener("click", () => {
+  elements.quizImportInput.value = "";
+  elements.quizImportInput.click();
+});
+elements.exportButton.addEventListener("click", exportQuiz);
+elements.quizImportInput.addEventListener("change", event => importQuiz(event.target.files[0]));
 elements.zoomOutButton.addEventListener("click", () => setImageZoom(imageZoom - 25));
 elements.zoomInButton.addEventListener("click", () => setImageZoom(imageZoom + 25));
 elements.zoomFitButton.addEventListener("click", () => setImageZoom(100));
@@ -920,8 +981,9 @@ async function startApp() {
   try {
     await loadQuizzes();
   } catch (error) {
-    announce(`Could not connect to the local Atlas server: ${error.message} Start it with "node server.js" and reload this page.`, true);
+    announce(`Could not connect to the local Atlas server: ${error.message} Start it with "node server.js" and reload this page.`, "error");
     elements.newButton.disabled = true;
+    elements.importButton.disabled = true;
     elements.firstUploadButton.disabled = true;
   }
 }

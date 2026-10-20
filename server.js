@@ -11,6 +11,7 @@ const SCORE_FILE = path.join(DATA_DIR, "scores.json");
 const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
 const MAX_MULTIPART_BYTES = MAX_IMAGE_BYTES + 1024 * 1024;
 const MAX_JSON_BYTES = 1024 * 1024;
+const MAX_BUNDLE_BYTES = 30 * 1024 * 1024;
 const IMAGE_TYPES = new Map([
   ["image/jpeg", "jpg"],
   ["image/png", "png"],
@@ -84,8 +85,8 @@ async function readBody(request, limit) {
   return Buffer.concat(chunks);
 }
 
-async function readJson(request) {
-  const body = await readBody(request, MAX_JSON_BYTES);
+async function readJson(request, limit = MAX_JSON_BYTES) {
+  const body = await readBody(request, limit);
   try {
     return JSON.parse(body.toString("utf8"));
   } catch {
@@ -168,6 +169,21 @@ function publicQuiz(quiz) {
   };
 }
 
+function validateImageBytes(bytes, type) {
+  const valid = type === "image/jpeg"
+    ? bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff
+    : type === "image/png"
+      ? bytes.length >= 8 && bytes.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))
+      : type === "image/gif"
+        ? bytes.subarray(0, 6).toString("ascii").match(/^GIF8[79]a$/) !== null
+        : type === "image/webp"
+          ? bytes.length >= 12 && bytes.toString("ascii", 0, 4) === "RIFF" && bytes.toString("ascii", 8, 12) === "WEBP"
+          : type === "image/svg+xml" && /<svg(?:\s|>)/i.test(bytes.toString("utf8", 0, Math.min(bytes.length, 4096)));
+  if (!valid) {
+    throw Object.assign(new Error("The bundle image does not match its declared image type."), { statusCode: 400 });
+  }
+}
+
 function sendJson(response, statusCode, value) {
   response.writeHead(statusCode, {
     "Content-Type": "application/json; charset=utf-8",
@@ -189,6 +205,98 @@ function validateId(id) {
 }
 
 async function handleApi(request, response, url) {
+  const exportMatch = url.pathname.match(/^\/api\/quizzes\/([^/]+)\/export$/);
+  if (request.method === "GET" && exportMatch) {
+    const id = decodeURIComponent(exportMatch[1]);
+    validateId(id);
+    const quiz = (await readQuizzes()).find(item => item.id === id);
+    if (!quiz) {
+      sendJson(response, 404, { error: "Quiz not found." });
+      return;
+    }
+    const imageBytes = await fs.readFile(path.join(IMAGE_DIR, path.basename(quiz.imageFile)));
+    const bundle = {
+      format: "atlas-quiz",
+      version: 1,
+      quiz: {
+        id: quiz.id,
+        title: quiz.title,
+        landmarks: quiz.landmarks,
+        createdAt: quiz.createdAt,
+        updatedAt: quiz.updatedAt
+      },
+      image: {
+        type: quiz.imageType,
+        data: imageBytes.toString("base64")
+      }
+    };
+    response.writeHead(200, {
+      "Content-Type": "application/vnd.atlas.quiz+json; charset=utf-8",
+      "Content-Disposition": `attachment; filename="atlas-quiz-${quiz.id}.atlas"`,
+      "Cache-Control": "no-store",
+      "X-Content-Type-Options": "nosniff"
+    });
+    response.end(JSON.stringify(bundle));
+    return;
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/quizzes/import") {
+    const bundle = await readJson(request, MAX_BUNDLE_BYTES);
+    if (!bundle || typeof bundle !== "object" || Array.isArray(bundle) ||
+        bundle.format !== "atlas-quiz" || bundle.version !== 1 ||
+        !bundle.quiz || typeof bundle.quiz !== "object" || Array.isArray(bundle.quiz) ||
+        !bundle.image || typeof bundle.image !== "object" || Array.isArray(bundle.image)) {
+      throw Object.assign(new Error("This is not a supported Atlas quiz bundle."), { statusCode: 400 });
+    }
+    const quizId = bundle.quiz.id;
+    validateId(quizId);
+    const title = normalizeTitle(bundle.quiz.title);
+    const landmarks = normalizeLandmarks(bundle.quiz.landmarks);
+    if (!Number.isSafeInteger(bundle.quiz.createdAt) || bundle.quiz.createdAt < 0 ||
+        !Number.isSafeInteger(bundle.quiz.updatedAt) || bundle.quiz.updatedAt < 0) {
+      throw Object.assign(new Error("The bundle has invalid quiz timestamps."), { statusCode: 400 });
+    }
+    const imageType = bundle.image.type;
+    if (!IMAGE_TYPES.has(imageType) || typeof bundle.image.data !== "string" ||
+        bundle.image.data.length === 0 ||
+        bundle.image.data.length > Math.ceil(MAX_IMAGE_BYTES / 3) * 4) {
+      throw Object.assign(new Error("The bundle must contain a supported image up to 20 MB."), { statusCode: 400 });
+    }
+    const imageBytes = Buffer.from(bundle.image.data, "base64");
+    if (imageBytes.length === 0 || imageBytes.length > MAX_IMAGE_BYTES ||
+        imageBytes.toString("base64") !== bundle.image.data) {
+      throw Object.assign(new Error("The bundle image data is invalid or larger than 20 MB."), { statusCode: 400 });
+    }
+    validateImageBytes(imageBytes, imageType);
+
+    const imported = await withStorageLock(async () => {
+      const quizzes = await readQuizzes();
+      if (quizzes.some(quiz => quiz.id === quizId)) {
+        throw Object.assign(new Error("A quiz with this ID already exists. It was not changed."), { statusCode: 409 });
+      }
+      const quiz = {
+        id: quizId,
+        title,
+        imageFile: `${randomUUID()}.${IMAGE_TYPES.get(imageType)}`,
+        imageType,
+        landmarks,
+        createdAt: bundle.quiz.createdAt,
+        updatedAt: bundle.quiz.updatedAt
+      };
+      try {
+        await fs.writeFile(path.join(IMAGE_DIR, quiz.imageFile), imageBytes, { flag: "wx" });
+        quizzes.push(quiz);
+        await writeQuizzes(quizzes);
+      } catch (error) {
+        await fs.rm(path.join(IMAGE_DIR, quiz.imageFile), { force: true }).catch(() => {});
+        throw error;
+      }
+      return publicQuiz(quiz);
+    });
+    sendJson(response, 201, imported);
+    return;
+  }
+
   if (request.method === "GET" && url.pathname === "/api/scores") {
     const scores = await readScores();
     scores.sort((a, b) => b.completedAt - a.completedAt);
